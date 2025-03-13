@@ -183,13 +183,13 @@ router.get('/get-bono', async (req, res = response) => {
                         }
 
                         // Configuración correcta para la descarga
-                        res.setHeader("Content-Disposition", 'attachment; filename="reserva.pdf"');
-                        res.setHeader("Content-Type", "application/pdf");
-                        res.setHeader("Content-Length", pdfBuffer.length);
+                        // res.setHeader("Content-Disposition", 'attachment; filename="reserva.pdf"');
+                        // res.setHeader("Content-Type", "application/pdf");
+                        // res.setHeader("Content-Length", pdfBuffer.length);
 
                         // Enviar PDF
-                        res.send(pdfBuffer);
-                        // return res.status(200).send(html)
+                        // res.send(pdfBuffer);
+                        return res.status(200).send(html)
                         // return res.status(200).json({
                         // attributes,
                         // Customer,
@@ -215,45 +215,5 @@ router.get('/get-bono', async (req, res = response) => {
         })
     }
 });
-
-router.get("/descargar-pdf", async (req, res) => {
-    try {
-      const browser = await puppeteer.launch();
-      const page = await browser.newPage();
-  
-      // ✨ Aquí defines el contenido del PDF
-      const htmlContent = `
-        <html>
-          <head>
-            <style>
-              body { font-family: Arial, sans-serif; text-align: center; }
-              h1 { color: #007bff; }
-            </style>
-          </head>
-          <body>
-            <h1>Reserva Confirmada</h1>
-            <p>Nombre: Juan Pérez</p>
-            <p>Hotel: Hotel Riviera Maya</p>
-            <p>Fecha: 15/08/2025</p>
-            <p>Total: <strong>$5,000 MXN</strong></p>
-          </body>
-        </html>
-      `;
-  
-      await page.setContent(htmlContent);
-      const pdfBuffer = await page.pdf({ format: "A4" });
-  
-      await browser.close();
-  
-      // 🏆 Configuración para descargar el PDF
-      res.setHeader("Content-Disposition", 'attachment; filename="reserva.pdf"');
-      res.setHeader("Content-Type", "application/pdf");
-      res.send(pdfBuffer);
-  
-    } catch (error) {
-      console.error("Error al generar el PDF:", error);
-      res.status(500).send("Error al generar el PDF");
-    }
-  });
 
 module.exports = router;
