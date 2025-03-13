@@ -170,17 +170,17 @@ router.get('/get-bono', async (req, res = response) => {
                                             
 
                                             // const browser = await puppeteer.launch();
-                                            const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-setuid-sandbox"] });
-                                            const page = await browser.newPage();
-                                            await page.setContent(html);
-                                           // Generar PDF
-                                            const pdfBuffer = await page.pdf({ format: "A4" });
-                                            await browser.close();
+                                        //     const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-setuid-sandbox"] });
+                                        //     const page = await browser.newPage();
+                                        //     await page.setContent(html);
+                                        //    // Generar PDF
+                                        //     const pdfBuffer = await page.pdf({ format: "A4" });
+                                        //     await browser.close();
 
                                             // Verificar si el PDF se generó correctamente
-                        if (!pdfBuffer || pdfBuffer.length === 0) {
-                            return res.status(400).json({ ok: false, msg: "Error al generar el PDF" });
-                        }
+                        // if (!pdfBuffer || pdfBuffer.length === 0) {
+                        //     return res.status(400).json({ ok: false, msg: "Error al generar el PDF" });
+                        // }
 
                         // Configuración correcta para la descarga
                         // res.setHeader("Content-Disposition", 'attachment; filename="reserva.pdf"');
