@@ -52,7 +52,7 @@ router.get('/get-bono', async (req, res = response) => {
                         })
                     } else {
                         const { attributes, Customer, Agent, Holder, Lines } = Booking.Booking
-                        console.log('booking encontrada:', attributes);
+                        // console.log('booking encontrada:', attributes);
                         
 
                         const head = `<head>
@@ -127,10 +127,26 @@ router.get('/get-bono', async (req, res = response) => {
                         try {
                             Lines.Line.forEach(Line => {
                                 if (Line.roomlist.room) {
+                                    console.log(Line.roomlist.room);
+                                    console.log('*****************************');
+                                    
                                     
                                      habitacion = `<ul><li><small>${Line.roomlist.room.typeroomname}</small></li><li><small>${Line.roomlist.room.boardtype.$value}</small></li></ul>`;
                                    
-                                    Line.roomlist.room.paxes.pax.forEach(pax => {
+                                     console.log( Array(Line.roomlist.room.paxes.pax)[0].length);
+
+                                     let paxArray = []
+                                     if (Array(Line.roomlist.room.paxes.pax)[0].length) {
+                                        paxArray = Line.roomlist.room.paxes.pax
+                                     }else{
+                                        paxArray = Array(Line.roomlist.room.paxes.pax)
+                                     }
+                                    //  paxArray[0]= Line.roomlist.room.paxes.pax
+                                     console.log(paxArray);
+                                     
+
+                                    paxArray.forEach(pax => {
+                                        // console.log(pax);
                                         
                                         paxHtml += `<li><small>${pax.name} ${pax.lastname}</small></li>`;
                                     });
@@ -139,7 +155,9 @@ router.get('/get-bono', async (req, res = response) => {
                                 };
                                 habitaciones = habitacion + paxHtml;
                             });
-                        } catch (error) {}
+                        } catch (error) {
+                            // console.error(error);
+                        }
 
                         let sectionsFinal = `<div class="section">
                                     <h3>Políticas de cancelación</h3>
@@ -165,9 +183,6 @@ router.get('/get-bono', async (req, res = response) => {
                                                     ${sectionsFinal}
                                             </body>
                                             </html>`;
-
-                                            console.log('HTML GENERADO');
-                                            
 
                                             // const browser = await puppeteer.launch();
                                         //     const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-setuid-sandbox"] });
