@@ -32,11 +32,11 @@ router.get('/get-bono', async (req, res = response) => {
 
     const { bookingCode } = req.query;
     console.log('bookingCode recibido:', bookingCode);
-    
+
 
     if (bookingCode) {
         try {
-            const url = 'https://volaris.juniper.es/wsExportacion/wsBookings.asmx?wsdl';
+            const url = 'https://intranet.yavas.com/wsExportacion/wsBookings.asmx?wsdl';
             const args = { user: 'Pitagoras', password: 'Mexico1993**', BookingCode: bookingCode };
 
             //   soap.createClient(url, {'Content-Type': 'text/xml'}, (err, client)=>{
@@ -44,6 +44,7 @@ router.get('/get-bono', async (req, res = response) => {
                 await client.getBookings(args, async (err, result) => {
                     const Booking = result.getBookingsResult.wsResult.Bookings
                     console.log('Esperando respuesta de Juniper...');
+                    // return res.json(Booking.Booking)
 
                     if (Booking == undefined) {
                         return res.status(400).json({
@@ -53,7 +54,7 @@ router.get('/get-bono', async (req, res = response) => {
                     } else {
                         const { attributes, Customer, Agent, Holder, Lines } = Booking.Booking
                         // console.log('booking encontrada:', attributes);
-                        
+
 
                         const head = `<head>
                                         <meta charset="UTF-8">
@@ -102,97 +103,112 @@ router.get('/get-bono', async (req, res = response) => {
                                             <small class="estado-booking">${attributes.Status}</small><br>
                                             <small class="detalle-booking">Fecha de creación: ${attributes.BookingDate.split("T")[0]} </small><br>
                                                 <small class="detalle-booking">Reserva Ya Vas: ${attributes.BookingCode}</small><br>
-                                                <small class="detalle-booking">No. Reservación: <strong> ${Lines.Line[0].attributes.Externalreference}</strong></small>
                                         </h2>        
                                         <div class="logo"><img src="https://media.staticontent.com/media/pictures/bd14a40a-0f23-41d0-9b02-c583b59933f2" alt="Ya Vas"  width="100%"></div>
                                     </div>`;
 
-                        let sections = `<div class="section">
-                                    <h3>Titular de la Reserva:</h3>        <small>${Holder.NameHolder} ${Holder.LastName}</small>
-                                </div>
-                                <div class="section">
-                                    <h3>Detalles de Productos:</h3>
-                                    <p>${Lines.Line[0].ServiceName} <br>
-                                        <small>${Lines.Line[0].roomlist.room.addressline}</small>
-                                        <br>
-                                        <small>Del ${Lines.Line[0].BeginTravelDate.split("T")[0]} al ${Lines.Line[0].EndTravelDate.split("T")[0]} </small> 
-                                    </p>
-                                </div>`;
-
-                        // console.log(Lines.Line);
+                        let detalles = '';
                         let habitaciones = '';
                         let habitacion = ''
                         let paxHtml = '<ul>';
+                        let html = `<!DOCTYPE html>
+                                                <html lang="es">${head}<body>`;
 
-                        try {
-                            Lines.Line.forEach(Line => {
-                                if (Line.roomlist.room) {
-                                    console.log(Line.roomlist.room);
-                                    console.log('*****************************');
-                                    
-                                    
-                                     habitacion = `<ul><li><small>${Line.roomlist.room.typeroomname}</small></li><li><small>${Line.roomlist.room.boardtype.$value}</small></li></ul>`;
-                                   
-                                     console.log( Array(Line.roomlist.room.paxes.pax)[0].length);
+                        // console.log(Lines);
 
-                                     let paxArray = []
-                                     if (Array(Line.roomlist.room.paxes.pax)[0].length) {
-                                        paxArray = Line.roomlist.room.paxes.pax
-                                     }else{
-                                        paxArray = Array(Line.roomlist.room.paxes.pax)
-                                     }
-                                    //  paxArray[0]= Line.roomlist.room.paxes.pax
-                                     console.log(paxArray);
-                                     
+                        Lines.Line.forEach(Line => {
+                            console.log(Line);
+                            
+                            if (Line.ProductType != 'J' && Line.ProductType != 'D3N') {
+                                if (Line.attributes.Status == 'OK') {
 
-                                    paxArray.forEach(pax => {
-                                        // console.log(pax);
-                                        
-                                        paxHtml += `<li><small>${pax.name} ${pax.lastname}</small></li>`;
-                                    });
-                                    paxHtml += '</ul>'
-                                                  
-                                };
-                                habitaciones = habitacion + paxHtml;
-                            });
-                        } catch (error) {
-                            // console.error(error);
-                        }
+                                    html += `${header}
+                                        <div class="section">
+                                            <h3>Titular de la Reserva:</h3> 
+                                            <small>${Holder.NameHolder} ${Holder.LastName}</small>
+                                        </div>
+                                        <div class="section">
+                                            <h3>Detalles:</h3>
+                                                <p>${Line.ServiceName} <br>
+                                                <small>${Line.roomlist.room.addressline}</small>
+                                                <br>
+                                                <small>Del ${Line.BeginTravelDate.split("T")[0]} al ${Line.EndTravelDate.split("T")[0]} </small> 
+                                            </p>
+                                        </div>
+                                        <div class="section">
+                                            <h3>Habitaciones</h3>
+                                            <p>
+                                            
+                                            `;
 
-                        let sectionsFinal = `<div class="section">
-                                    <h3>Políticas de cancelación</h3>
-                                    <p><small>${Lines.Line[0].CancellationPolicy.Description}</small></p>
-                                </div>
+                                    if (Line.roomlist.room) {
 
-                                <div class="section" style='font-size:8px'>
-                                        ${Lines.Line[0].HotelRemarks}
-                                </div>`;
+                                        habitacion = `<ul><li><small>${Line.roomlist.room.typeroomname}</small></li><li><small>${Line.roomlist.room.boardtype.$value}</small></li></ul>`;
 
-                        const html = `<!DOCTYPE html>
-                                                <html lang="es">
-                                                    ${head}
-                                                    <body>
-                                                    ${header}
-                                                    ${sections}
-                                                    <div class="section">
-                                                        <h3>Habitaciones</h3>
-                                                        <p>
-                                                        ${habitaciones}
-                                                        </p>
-                                                    </div>
-                                                    ${sectionsFinal}
-                                            </body>
-                                            </html>`;
+                                        let paxArray = []
+                                        if (Array(Line.roomlist.room.paxes.pax)[0].length) {
+                                            paxArray = Line.roomlist.room.paxes.pax
+                                        } else {
+                                            paxArray = Array(Line.roomlist.room.paxes.pax)
+                                        }
 
-                                            // const browser = await puppeteer.launch();
-                                        //     const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-setuid-sandbox"] });
-                                        //     const page = await browser.newPage();
-                                        //     await page.setContent(html);
-                                        //    // Generar PDF
-                                        //     const pdfBuffer = await page.pdf({ format: "A4" });
-                                        //     await browser.close();
+                                        paxArray.forEach(pax => {
+                                            paxHtml += `<li><small>${pax.name} ${pax.lastname}</small></li>`;
+                                        });
+                                        paxHtml += '</ul>'
 
-                                            // Verificar si el PDF se generó correctamente
+                                    };
+                                    html += habitacion + paxHtml + '</p></div>';
+
+                                    html += `<div class="section" style="font-size:8px;">${Line.HotelRemarks}</div>`
+                                }
+
+                            }else{
+                                return res.status(200).send(`<!DOCTYPE html>
+                                    <html lang="en">
+                                    <head>
+                                        <meta charset="UTF-8">
+                                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                        <title>Reservas</title>
+                                    </head>
+                                    <body>
+                                        <h1>No se pueden procesar la reserva diferentes de alojamientos</h1>
+                                    </body>
+                                    </html>`)
+                            }
+
+                        });
+
+                        html += '</body></html>';
+
+                        //    let sections = `<div class="section">
+                        //    <h3>Titular de la Reserva:</h3>        <small>${Holder.NameHolder} ${Holder.LastName}</small>
+                        //         </div>
+                        //         <div class="section">
+                        //             <h3>Detalles:</h3>
+                        //                 ${detalles}
+                        //         </div>`;
+
+                        // let sectionsFinal = `<div class="section">
+                        //             <h3>Políticas de cancelación</h3>
+                        //             <p><small>${Lines.Line[0].CancellationPolicy.Description}</small></p>
+                        //         </div>
+
+                        //         <div class="section" style='font-size:8px'>
+                        //                 ${Lines.Line[0].HotelRemarks}
+                        //         </div>`;
+
+
+
+                        // const browser = await puppeteer.launch();
+                        //     const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-setuid-sandbox"] });
+                        //     const page = await browser.newPage();
+                        //     await page.setContent(html);
+                        //    // Generar PDF
+                        //     const pdfBuffer = await page.pdf({ format: "A4" });
+                        //     await browser.close();
+
+                        // Verificar si el PDF se generó correctamente
                         // if (!pdfBuffer || pdfBuffer.length === 0) {
                         //     return res.status(400).json({ ok: false, msg: "Error al generar el PDF" });
                         // }
@@ -218,16 +234,38 @@ router.get('/get-bono', async (req, res = response) => {
             });
 
         } catch (error) {
-            return res.status(400).json({
-                ok: false,
-                msg: 'No se pudo procesar la reserva'
-            })
+            // return res.status(400).json({
+            //     ok: false,
+            //     msg: 'No se pudo procesar la reserva'
+            // })
+            return res.status(200).send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas</title>
+</head>
+<body>
+    <h1>No se pudo procesar la reserva</h1>
+</body>
+</html>`)
         }
     } else {
-        return res.status(400).json({
-            ok: false,
-            msg: 'No se recibió localizador'
-        })
+        // return res.status(400).json({
+        //     ok: false,
+        //     msg: 'No se recibió localizador'
+        // })
+        return res.status(200).send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas</title>
+</head>
+<body>
+    <h1>No se pudo procesar la reserva</h1>
+</body>
+</html>`)
     }
 });
 
